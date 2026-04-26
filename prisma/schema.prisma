@@ -13,14 +13,17 @@ datasource db {
 }
 
 model User {
-  id       Int     @id @default(autoincrement())
-  name     String
-  email    String  @unique
-  password String
-  role     Role    @default(USER)
-  issues   Issue[]
-  upvotes Upvote[]
-  comments Comment[]
+  id            Int       @id @default(autoincrement())
+  name          String
+  email         String    @unique
+  password      String
+  role          Role      @default(USER)
+  isVerified    Boolean   @default(false)
+  otp           String?
+  otpExpiresAt  DateTime?
+  issues        Issue[]
+  upvotes       Upvote[]
+  comments      Comment[]
   notifications Notification[]
 }
 
