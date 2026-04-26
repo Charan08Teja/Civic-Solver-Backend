@@ -1,6 +1,7 @@
 const prisma = require('../config/prisma');
 const generateHash = require('../utils/imageHash');
-const { getIo, onlineUsers } = require('../../socket');
+const { classifyIssue } = require('../utils/aiClassifier');
+const { getIO, onlineUsers } = require('../../socket');
 
 // CREATE ISSUE
 const stringSimilarity = require('string-similarity');
@@ -18,7 +19,15 @@ const createIssue = async (req, res) => {
       newImageHash = await generateHash(imageUrl);
     }
 
-    // 2. Get all existing issues
+    // 2. Classify the issue
+    let category = 'OTHER';
+    try {
+      category = await classifyIssue(title, description, imageUrl);
+    } catch (error) {
+      console.log('Classification failed, using OTHER:', error.message);
+    }
+
+    // 3. Get all existing issues
     const existingIssues = await prisma.issue.findMany();
 
     for (let issue of existingIssues) {
@@ -55,7 +64,7 @@ const createIssue = async (req, res) => {
       }
     }
 
-    // 3. Create issue
+    // 4. Create issue
     const newIssue = await prisma.issue.create({
       data: {
         title,
@@ -64,6 +73,7 @@ const createIssue = async (req, res) => {
         longitude: parseFloat(longitude),
         imageUrl,
         imageHash: newImageHash,
+        category,
         userId: req.user.userId
       }
     });
@@ -313,6 +323,16 @@ const deleteIssue = async (req, res) => {
       });
     }
 
+    // ✅ DELETE RELATED DATA FIRST
+    await prisma.comment.deleteMany({
+      where: { issueId }
+    });
+
+    await prisma.upvote.deleteMany({
+      where: { issueId }
+    });
+
+    // ✅ NOW DELETE ISSUE
     await prisma.issue.delete({
       where: { id: issueId }
     });
@@ -322,6 +342,7 @@ const deleteIssue = async (req, res) => {
     });
 
   } catch (error) {
+    console.log(error); // 👈 IMPORTANT (to see real error)
     res.status(500).json({ error: error.message });
   }
 };
@@ -579,6 +600,26 @@ const markNotificationRead = async (req, res) => {
 };
 
 
+// Profile view
+const getMyProfile = async (req, res) => {
+  const userId = req.user.userId;
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      issues: true,
+      upvotes: {
+        include: {
+          issue: true
+        }
+      }
+    }
+  });
+
+  res.json(user);
+};
+
+
 module.exports = {
   createIssue,
   getAllIssues,
@@ -591,5 +632,6 @@ module.exports = {
   getCommentsByIssue,
   deleteComment,
   getNotifications,
-  markNotificationRead
+  markNotificationRead,
+  getMyProfile
 };

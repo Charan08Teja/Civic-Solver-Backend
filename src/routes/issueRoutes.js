@@ -13,7 +13,8 @@ const {
   getCommentsByIssue,
   deleteComment,
   getNotifications,
-  markNotificationRead
+  markNotificationRead,
+  getMyProfile
 } = require('../controllers/issueController');
 
 const authMiddleware = require('../middleware/authMiddleware');
@@ -23,12 +24,17 @@ const upload = require('../utils/multer');
 // USER ROUTES
 router.post('/', authMiddleware, upload.single('image'), createIssue);
 router.get('/', getAllIssues);
+
+// 🔥 Put these BEFORE any /:id routes
+router.get('/notifications', authMiddleware, getNotifications);
+router.put('/notifications/:id/read', authMiddleware, markNotificationRead);
+router.get('/me', authMiddleware, getMyProfile);
+
 router.post('/:id/upvote', authMiddleware, upvoteIssue);
 router.post('/:id/comment', authMiddleware, addComment);
 router.get('/:id/comments', getCommentsByIssue);
+
 router.delete('/comments/:id', authMiddleware, deleteComment);
-router.get('/notifications', authMiddleware, getNotifications);
-router.put('/notifications/:id/read', authMiddleware, markNotificationRead);
 
 // ADMIN ROUTES (clean now)
 router.get('/issues', authMiddleware, adminMiddleware, getAllIssuesAdmin);
