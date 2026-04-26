@@ -23,7 +23,10 @@ initSocket(server);
 // Middlewares
 app.use(
   cors({
-    origin: "YOUR_VERCEL_FRONTEND_URL", // example: https://civic-solver.vercel.app
+    origin: [
+      "http://localhost:5173",
+      "https://civic-solver-frontend.vercel.app"
+    ],
     credentials: true,
   })
 );
