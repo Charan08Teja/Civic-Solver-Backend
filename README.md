@@ -1,223 +1,246 @@
-# Team-Project
-# 🚀 Civic Solver Backend
+# Civic Solver Backend
 
-A scalable backend system for reporting, tracking, and resolving civic issues with real-time notifications.
+Civic Solver backend powers the civic issue reporting system with authentication, issue management, notifications, admin features, image uploads, and real-time updates.
 
----
+Built using Node.js, Express, Prisma, PostgreSQL, Socket.IO, and Cloudinary.
 
-## 📌 Overview
+## Live API
 
-Civic Solver is a platform that allows users to report local civic issues (like potholes, garbage, streetlights, etc.), interact with them through comments and upvotes, and track their resolution status.
-
-This backend powers the entire system, including authentication, issue management, admin controls, and real-time notifications.
+[https://civic-solver-backend.onrender.com](https://civic-solver-backend.onrender.com)
 
 ---
 
-## ✨ Features
+## Features
 
-### 👤 User Features
-
-* 🔐 JWT-based Authentication (Register/Login)
-* 📝 Report issues with description, location & image
-* 🔍 Duplicate issue detection (text + image hashing)
-* 👍 Upvote issues
-* 💬 Comment on issues
-* 🔔 Receive notifications (real-time + stored)
-
-### 🛠️ Admin Features
-
-* 📊 Dashboard statistics (total, pending, resolved, etc.)
-* 🔎 Advanced filtering (status, search, location radius)
-* ✏️ Update issue status
-* ❌ Delete issues
-* 👁️ View detailed issue data
-
-### ⚡ Real-Time Features
-
-* 🔔 Instant notifications using Socket.IO
-* 👥 Online user tracking
-* 📡 Live updates for comments & upvotes
+* User Registration
+* Login Authentication
+* JWT Authorization
+* OTP Email Verification
+* Create Issues
+* Upload Images
+* Cloudinary Integration
+* AI-based Issue Classification
+* Duplicate Image Detection
+* Upvotes
+* Comments
+* Delete Comments
+* Notifications
+* Admin-only Features
+* Update Issue Status
+* Delete Issues
+* Admin Dashboard Stats
+* Real-time Notifications
 
 ---
 
-## 🧱 Tech Stack
+## Tech Stack
 
-* **Backend:** Node.js, Express.js
-* **Database:** PostgreSQL
-* **ORM:** Prisma
-* **Authentication:** JWT
-* **Real-Time:** Socket.IO
-* **File Uploads:** Multer
-* **Image Processing:** Custom hashing
-* **Other:** string-similarity
+### Core
+
+* Node.js
+* Express.js
+
+### Database
+
+* PostgreSQL (Neon)
+
+### ORM
+
+* Prisma
+* Prisma Client
+
+### Authentication
+
+* bcryptjs
+* jsonwebtoken
+
+### Uploads
+
+* multer
+* cloudinary
+* multer-storage-cloudinary
+
+### Real-time
+
+* socket.io
+
+### Utilities
+
+* dotenv
+* cors
+* image-hash
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
+src/
+│── config/
+│── controllers/
+│── middleware/
+│── routes/
+│── utils/
+
+prisma/
+│── schema.prisma
+│── migrations/
+
+server.js
+socket.js
+cloudinary.js
+
+---
+
+## Installation
+
+Clone repository:
+
+```bash
+git clone https://github.com/Charan08Teja/civic-solver-backend.git
 ```
-civic-solver-backend/
-│
-├── prisma/
-│   ├── schema.prisma
-│   └── migrations/
-│
-├── src/
-│   ├── config/
-│   ├── controllers/
-│   ├── middleware/
-│   ├── routes/
-│   └── utils/
-│
-├── uploads/
-├── socket.js
-├── server.js
-├── package.json
-└── .env
-```
 
----
+Go into project:
 
-## ⚙️ Environment Variables
-
-Create a `.env` file in root:
-
-```
-DATABASE_URL=your_database_url
-JWT_SECRET=your_secret_key
-PORT=5000
-```
-
----
-
-## 🚀 Installation & Setup
-
-### 1️⃣ Clone the repository
-
-```
-git clone https://github.com/YOUR_USERNAME/civic-solver-backend.git
+```bash
 cd civic-solver-backend
 ```
 
-### 2️⃣ Install dependencies
+Install dependencies:
 
-```
+```bash
 npm install
 ```
 
-### 3️⃣ Setup database
+---
 
+## Environment Variables
+
+Create `.env` file:
+
+```env
+DATABASE_URL=your_database_url
+JWT_SECRET=your_jwt_secret
+EMAIL_USER=your_email
+EMAIL_PASS=your_email_password
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
 ```
+
+---
+
+## Prisma Setup
+
+Generate Prisma Client:
+
+```bash
+npx prisma generate
+```
+
+Push schema:
+
+```bash
+npx prisma db push
+```
+
+Run migrations:
+
+```bash
 npx prisma migrate dev
 ```
 
-### 4️⃣ Run the server
+Open Prisma Studio:
 
-```
-npx nodemon server.js
-```
-
-Server will run on:
-
-```
-http://localhost:5000
+```bash
+npx prisma studio
 ```
 
 ---
 
-## 🔌 API Endpoints
+## Run Server
 
-### 🔐 Auth
+Development:
 
-* `POST /api/auth/register`
-* `POST /api/auth/login`
-
-### 📌 Issues
-
-* `POST /api/issues` → Create issue
-* `GET /api/issues` → Get all issues
-* `POST /api/issues/:id/upvote` → Upvote
-* `POST /api/issues/:id/comment` → Add comment
-
-### 🛠️ Admin
-
-* `GET /api/admin` → Get all issues (admin)
-* `PATCH /api/admin/:id/status` → Update status
-* `DELETE /api/admin/:id` → Delete issue
-* `GET /api/admin/stats` → Dashboard stats
-
-### 💬 Comments
-
-* `GET /api/issues/:id/comments`
-* `DELETE /api/comments/:id`
-
-### 🔔 Notifications
-
-* `GET /api/notifications`
-* `PATCH /api/notifications/:id/read`
-
----
-
-## ⚡ Real-Time (Socket.IO)
-
-### Connection
-
-```
-ws://localhost:5000
+```bash
+npm run dev
 ```
 
-### Events
+Production:
 
-#### Register User
-
-```
-socket.emit("register", userId);
-```
-
-#### Receive Notification
-
-```
-socket.on("notification", (data) => {
-  console.log(data);
-});
+```bash
+npm start
 ```
 
 ---
 
-## 🧠 Key Concepts Implemented
+## API Routes
 
-* 🔍 Duplicate Detection (Text + Image Hashing)
-* 🌍 Geolocation Filtering (Haversine formula)
-* ⚡ Real-time communication (WebSockets)
-* 🔐 Secure authentication (JWT)
-* 🧩 Modular backend architecture
+### Auth
+
+POST `/api/auth/register`
+POST `/api/auth/login`
+POST `/api/auth/verify-otp`
+
+### Issues
+
+POST `/api/issues`
+GET `/api/issues`
+POST `/api/issues/:id/upvote`
+
+### Comments
+
+POST `/api/issues/:id/comment`
+GET `/api/issues/:id/comments`
+DELETE `/api/issues/comments/:id`
+
+### Notifications
+
+GET `/api/notifications`
+
+### Admin
+
+GET `/api/admin/issues`
+PATCH `/api/admin/issues/:id/status`
+DELETE `/api/admin/issues/:id`
+GET `/api/admin/stats`
 
 ---
 
-## 📸 Future Improvements
+## Deployment
 
-* 🔔 Notification UI (Frontend)
-* 📱 Mobile app integration
-* 📍 Map-based issue visualization
-* 📊 Analytics dashboard
-* 📧 Email notifications
+Backend deployed on:
 
----
+* Render
 
-## 🤝 Contributing
+Database hosted on:
 
-Pull requests are welcome. For major changes, please open an issue first.
+* Neon PostgreSQL
 
+Images hosted on:
 
----
-
-## 👨‍💻 Author
-
-Charan Teja , Sunil Reddy , Md Mazhar
-GitHub: https://github.com/Charan08Teja
+* Cloudinary
 
 ---
 
-## ⭐ Support
+## Security
 
-If you like this project, give it a ⭐ on GitHub!
+* Password hashing with bcrypt
+* JWT authentication
+* Role-based authorization
+* Protected routes
+
+---
+
+## Future Improvements
+
+* Search API
+* Better AI classification
+* Spam detection
+* Issue escalation
+* Analytics improvements
+
+---
+
+## Author
+
+Charan
