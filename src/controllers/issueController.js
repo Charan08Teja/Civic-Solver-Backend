@@ -83,10 +83,15 @@ const createIssue = async (req, res) => {
       issue: newIssue
     });
 
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
+      } catch (error) {
+
+  console.log("CREATE ISSUE ERROR:", error);
+
+  res.status(500).json({
+    error: error.message,
+    stack: error.stack
+  });
+}
 
 // GET ALL ISSUES (PUBLIC VIEW - with limited details)
 const getAllIssues = async (req, res) => {
