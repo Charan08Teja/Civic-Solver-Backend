@@ -8,55 +8,70 @@ const stringSimilarity = require('string-similarity');
 
 const createIssue = async (req, res) => {
   try {
+
     const { title, description, latitude, longitude } = req.body;
 
     const imageUrl = req.file ? req.file.path : null;
 
     let newImageHash = null;
 
-    // 1. Generate hash for new image
+    // ✅ Generate image hash
     if (imageUrl) {
       newImageHash = await generateHash(imageUrl);
     }
 
-    // 2. Classify the issue
+    // ✅ Classify issue
     let category = 'OTHER';
+
     try {
-      category = await classifyIssue(title, description, imageUrl);
+      category = await classifyIssue(
+        title,
+        description,
+        imageUrl
+      );
     } catch (error) {
-      console.log('Classification failed, using OTHER:', error.message);
+      console.log(
+        'Classification failed, using OTHER:',
+        error.message
+      );
     }
 
-    // 3. Get all existing issues
+    // ✅ Get all existing issues
     const existingIssues = await prisma.issue.findMany();
 
     for (let issue of existingIssues) {
 
       // 🔹 TEXT SIMILARITY
-      const textSimilarity = stringSimilarity.compareTwoStrings(
-        description.toLowerCase(),
-        issue.description.toLowerCase()
-      );
+      const textSimilarity =
+        stringSimilarity.compareTwoStrings(
+          description.toLowerCase(),
+          issue.description.toLowerCase()
+        );
 
       // 🔹 IMAGE SIMILARITY
       let imageSimilar = false;
 
       if (newImageHash && issue.imageHash) {
+
         let diff = 0;
 
         for (let i = 0; i < newImageHash.length; i++) {
-          if (newImageHash[i] !== issue.imageHash[i]) diff++;
+          if (newImageHash[i] !== issue.imageHash[i]) {
+            diff++;
+          }
         }
 
-        const similarity = 1 - diff / newImageHash.length;
+        const similarity =
+          1 - diff / newImageHash.length;
 
         if (similarity > 0.7) {
           imageSimilar = true;
         }
       }
 
-      // 🔥 FINAL DECISION
+      // 🔥 DUPLICATE CHECK
       if (textSimilarity > 0.7 || imageSimilar) {
+
         return res.status(200).json({
           message: 'Duplicate issue detected',
           existingIssue: issue
@@ -64,7 +79,7 @@ const createIssue = async (req, res) => {
       }
     }
 
-    // 4. Create issue
+    // ✅ Create issue
     const newIssue = await prisma.issue.create({
       data: {
         title,
@@ -78,19 +93,24 @@ const createIssue = async (req, res) => {
       }
     });
 
+    // ✅ Success response
     res.status(201).json({
       message: 'Issue created successfully',
       issue: newIssue
     });
 
-      } catch (error) {
+  } catch (error) {
 
-  console.log("CREATE ISSUE ERROR:", error);
+    console.log(
+      "CREATE ISSUE ERROR:",
+      error
+    );
 
-  res.status(500).json({
-    error: error.message,
-    stack: error.stack
-  });
+    res.status(500).json({
+      error: error.message,
+      stack: error.stack
+    });
+  }
 };
 
 // GET ALL ISSUES (PUBLIC VIEW - with limited details)
