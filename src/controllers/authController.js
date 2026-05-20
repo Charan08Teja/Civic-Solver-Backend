@@ -7,13 +7,16 @@ const emailUser = process.env.EMAIL_USER;
 const emailPass = process.env.EMAIL_PASS;
 const emailService = process.env.EMAIL_SERVICE || 'gmail';
 
-// ✅ Mail transporter
+// ✅ Mail transporter (FIXED FOR RENDER)
 const transporter = nodemailer.createTransport({
-  service: emailService,
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true,
   auth: {
     user: emailUser,
     pass: emailPass
-  }
+  },
+  connectionTimeout: 10000
 });
 
 // ✅ Verify transporter on server start
@@ -24,6 +27,7 @@ transporter.verify((error, success) => {
     console.log('MAIL SERVER READY');
   }
 });
+
 
 // ✅ Generate OTP
 function generateOtp() {
