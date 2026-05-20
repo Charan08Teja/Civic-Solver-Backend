@@ -7,56 +7,33 @@ const { getIO, onlineUsers } = require('../../socket');
 const stringSimilarity = require('string-similarity');
 
 const createIssue = async (req, res) => {
-
   try {
-
-    console.log("CREATE ISSUE STARTED");
 
     const { title, description, latitude, longitude } = req.body;
 
-    console.log("BODY RECEIVED");
-
     const imageUrl = req.file ? req.file.path : null;
-
-    console.log("IMAGE URL:", imageUrl);
 
     let newImageHash = null;
 
-    // ✅ Generate hash for new image
+    // ✅ Generate image hash
     if (imageUrl) {
-
-      console.log("GENERATING HASH...");
-
       newImageHash = await generateHash(imageUrl);
-
-      console.log("HASH GENERATED:", newImageHash);
     }
 
     // ✅ Classify issue
     let category = 'OTHER';
 
     try {
-
-      console.log("CLASSIFYING ISSUE...");
-
       category = classifyIssue(title, description);
-
-      console.log("CATEGORY:", category);
-
     } catch (error) {
-
       console.log(
-        'Classification failed, using OTHER:',
+        'Classification failed:',
         error.message
       );
     }
 
     // ✅ Fetch existing issues
-    console.log("FETCHING EXISTING ISSUES...");
-
     const existingIssues = await prisma.issue.findMany();
-
-    console.log("EXISTING ISSUES COUNT:", existingIssues.length);
 
     // ✅ Duplicate checking
     for (let issue of existingIssues) {
@@ -88,9 +65,8 @@ const createIssue = async (req, res) => {
         }
       }
 
+      // ✅ Duplicate found
       if (textSimilarity > 0.7 || imageSimilar) {
-
-        console.log("DUPLICATE ISSUE DETECTED");
 
         return res.status(200).json({
           message: 'Duplicate issue detected',
@@ -98,19 +74,6 @@ const createIssue = async (req, res) => {
         });
       }
     }
-
-    console.log("BEFORE DB CREATE");
-
-    console.log({
-      title,
-      description,
-      latitude,
-      longitude,
-      imageUrl,
-      newImageHash,
-      category,
-      userId: req.user.userId
-    });
 
     // ✅ Create issue
     const newIssue = await prisma.issue.create({
@@ -126,8 +89,6 @@ const createIssue = async (req, res) => {
       }
     });
 
-    console.log("ISSUE CREATED SUCCESSFULLY");
-
     res.status(201).json({
       message: 'Issue created successfully',
       issue: newIssue
@@ -138,8 +99,7 @@ const createIssue = async (req, res) => {
     console.log("CREATE ISSUE ERROR:", error);
 
     res.status(500).json({
-      error: error.message,
-      stack: error.stack
+      error: error.message
     });
   }
 };
