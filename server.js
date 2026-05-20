@@ -4,6 +4,15 @@ require("dotenv").config();
 
 const http = require("http");
 
+// 🔥 GLOBAL ERROR LOGGING
+process.on("uncaughtException", (err) => {
+  console.error("UNCAUGHT EXCEPTION:", err);
+});
+
+process.on("unhandledRejection", (err) => {
+  console.error("UNHANDLED REJECTION:", err);
+});
+
 // Socket setup
 const { initSocket } = require("./socket");
 
@@ -24,8 +33,11 @@ initSocket(server);
 app.use(
   cors({
     origin: (origin, callback) => {
-      // allow requests with no origin (mobile apps, Postman, Expo)
-      if (!origin) return callback(null, true);
+
+      // allow requests with no origin
+      if (!origin) {
+        return callback(null, true);
+      }
 
       const allowedOrigins = [
         "http://localhost:5173",
@@ -35,7 +47,10 @@ app.use(
       if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        callback(null, true); // allow mobile/expo requests
+
+        console.log("Blocked origin:", origin);
+
+        callback(null, true);
       }
     },
     credentials: true,
@@ -66,6 +81,17 @@ app.get("/api/protected", authMiddleware, (req, res) => {
   res.json({
     message: "Protected route accessed",
     user: req.user,
+  });
+});
+
+// 🔥 GLOBAL EXPRESS ERROR HANDLER
+app.use((err, req, res, next) => {
+
+  console.error("GLOBAL ERROR:", err);
+
+  res.status(500).json({
+    error: err.message,
+    stack: err.stack
   });
 });
 
