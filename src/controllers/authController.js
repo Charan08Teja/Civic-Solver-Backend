@@ -9,7 +9,7 @@ const emailService = process.env.EMAIL_SERVICE || 'gmail';
 
 // ✅ Mail transporter (FIXED FOR RENDER)
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
+  host: "smtp-relay.brevo.com",
   port: 465,
   secure: true,
   auth: {
