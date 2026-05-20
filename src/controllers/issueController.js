@@ -8,70 +8,55 @@ const stringSimilarity = require('string-similarity');
 
 const createIssue = async (req, res) => {
   try {
-
     const { title, description, latitude, longitude } = req.body;
 
     const imageUrl = req.file ? req.file.path : null;
 
     let newImageHash = null;
 
-    // ✅ Generate image hash
+    // 1. Generate hash for new image
     if (imageUrl) {
       newImageHash = await generateHash(imageUrl);
     }
 
-    // ✅ Classify issue
+    // 2. Classify the issue
     let category = 'OTHER';
-
     try {
-      category = await classifyIssue(
-        title,
-        description,
-        imageUrl
-      );
+      category = await classifyIssue(title, description, imageUrl);
     } catch (error) {
-      console.log(
-        'Classification failed, using OTHER:',
-        error.message
-      );
+      console.log('Classification failed, using OTHER:', error.message);
     }
 
-    // ✅ Get all existing issues
+    // 3. Get all existing issues
     const existingIssues = await prisma.issue.findMany();
 
     for (let issue of existingIssues) {
 
       // 🔹 TEXT SIMILARITY
-      const textSimilarity =
-        stringSimilarity.compareTwoStrings(
-          description.toLowerCase(),
-          issue.description.toLowerCase()
-        );
+      const textSimilarity = stringSimilarity.compareTwoStrings(
+        description.toLowerCase(),
+        issue.description.toLowerCase()
+      );
 
       // 🔹 IMAGE SIMILARITY
       let imageSimilar = false;
 
       if (newImageHash && issue.imageHash) {
-
         let diff = 0;
 
         for (let i = 0; i < newImageHash.length; i++) {
-          if (newImageHash[i] !== issue.imageHash[i]) {
-            diff++;
-          }
+          if (newImageHash[i] !== issue.imageHash[i]) diff++;
         }
 
-        const similarity =
-          1 - diff / newImageHash.length;
+        const similarity = 1 - diff / newImageHash.length;
 
         if (similarity > 0.7) {
           imageSimilar = true;
         }
       }
 
-      // 🔥 DUPLICATE CHECK
+      // 🔥 FINAL DECISION
       if (textSimilarity > 0.7 || imageSimilar) {
-
         return res.status(200).json({
           message: 'Duplicate issue detected',
           existingIssue: issue
@@ -79,7 +64,7 @@ const createIssue = async (req, res) => {
       }
     }
 
-    // ✅ Create issue
+    // 4. Create issue
     const newIssue = await prisma.issue.create({
       data: {
         title,
@@ -93,23 +78,13 @@ const createIssue = async (req, res) => {
       }
     });
 
-    // ✅ Success response
     res.status(201).json({
       message: 'Issue created successfully',
       issue: newIssue
     });
 
   } catch (error) {
-
-    console.log(
-      "CREATE ISSUE ERROR:",
-      error
-    );
-
-    res.status(500).json({
-      error: error.message,
-      stack: error.stack
-    });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -426,7 +401,7 @@ const upvoteIssue = async (req, res) => {
 
     if (existing) {
       return res.status(400).json({
-        message: "Already upvoted"
+        message: 'Already upvoted'
       });
     }
 
@@ -435,14 +410,6 @@ const upvoteIssue = async (req, res) => {
       data: {
         userId,
         issueId
-      }
-    });
-
-    // ✅ Get current user (to get name)
-    const currentUser = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        name: true
       }
     });
 
@@ -461,30 +428,24 @@ const upvoteIssue = async (req, res) => {
     if (issue.userId !== userId) {
       const notification = await prisma.notification.create({
         data: {
-          message: `${currentUser.name} upvoted your issue`,
+          message: `${req.user.name} Upvoted on your issue`,
           userId: issue.userId
         }
       });
 
       // ⚡ Real-time notification
       const io = getIO();
-
       if (onlineUsers[issue.userId]) {
-        io.to(onlineUsers[issue.userId]).emit(
-          "notification",
-          notification
-        );
+        io.to(onlineUsers[issue.userId]).emit('notification', notification);
       }
     }
 
     res.json({
-      message: "Upvoted successfully"
+      message: 'Upvoted successfully'
     });
 
   } catch (error) {
-    res.status(500).json({
-      error: error.message
-    });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -516,31 +477,19 @@ const addComment = async (req, res) => {
       }
     });
 
-    // ✅ Get current user (to get name)
-    const currentUser = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        name: true
-      }
-    });
-
     // 🔥 Notify issue owner (avoid self-notification)
     if (issue.userId !== userId) {
       const notification = await prisma.notification.create({
         data: {
-          message: `${currentUser.name} commented on your issue`,
+          message: `${req.user.name} commented on your issue`,
           userId: issue.userId
         }
       });
 
       // ⚡ Real-time notification
       const io = getIO();
-
       if (onlineUsers[issue.userId]) {
-        io.to(onlineUsers[issue.userId]).emit(
-          "notification",
-          notification
-        );
+        io.to(onlineUsers[issue.userId]).emit('notification', notification);
       }
     }
 
@@ -550,13 +499,9 @@ const addComment = async (req, res) => {
     });
 
   } catch (error) {
-    res.status(500).json({
-      error: error.message
-    });
+    res.status(500).json({ error: error.message });
   }
 };
-
-
 // GET COMMENTS FOR ISSUE
 const getCommentsByIssue = async (req, res) => {
   try {
