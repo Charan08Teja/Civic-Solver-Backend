@@ -401,7 +401,7 @@ const upvoteIssue = async (req, res) => {
 
     if (existing) {
       return res.status(400).json({
-        message: 'Already upvoted'
+        message: "Already upvoted"
       });
     }
 
@@ -410,6 +410,14 @@ const upvoteIssue = async (req, res) => {
       data: {
         userId,
         issueId
+      }
+    });
+
+    // ✅ Get current user (to get name)
+    const currentUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        name: true
       }
     });
 
@@ -428,24 +436,30 @@ const upvoteIssue = async (req, res) => {
     if (issue.userId !== userId) {
       const notification = await prisma.notification.create({
         data: {
-          message: `${req.user.name} Upvoted on your issue`,
+          message: `${currentUser.name} upvoted your issue`,
           userId: issue.userId
         }
       });
 
       // ⚡ Real-time notification
       const io = getIO();
+
       if (onlineUsers[issue.userId]) {
-        io.to(onlineUsers[issue.userId]).emit('notification', notification);
+        io.to(onlineUsers[issue.userId]).emit(
+          "notification",
+          notification
+        );
       }
     }
 
     res.json({
-      message: 'Upvoted successfully'
+      message: "Upvoted successfully"
     });
 
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({
+      error: error.message
+    });
   }
 };
 
@@ -477,19 +491,31 @@ const addComment = async (req, res) => {
       }
     });
 
+    // ✅ Get current user (to get name)
+    const currentUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        name: true
+      }
+    });
+
     // 🔥 Notify issue owner (avoid self-notification)
     if (issue.userId !== userId) {
       const notification = await prisma.notification.create({
         data: {
-          message: `${req.user.name} commented on your issue`,
+          message: `${currentUser.name} commented on your issue`,
           userId: issue.userId
         }
       });
 
       // ⚡ Real-time notification
       const io = getIO();
+
       if (onlineUsers[issue.userId]) {
-        io.to(onlineUsers[issue.userId]).emit('notification', notification);
+        io.to(onlineUsers[issue.userId]).emit(
+          "notification",
+          notification
+        );
       }
     }
 
@@ -499,9 +525,13 @@ const addComment = async (req, res) => {
     });
 
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({
+      error: error.message
+    });
   }
 };
+
+
 // GET COMMENTS FOR ISSUE
 const getCommentsByIssue = async (req, res) => {
   try {
