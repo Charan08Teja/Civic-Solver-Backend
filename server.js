@@ -23,10 +23,21 @@ initSocket(server);
 // Middlewares
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "https://civic-solver-frontend.vercel.app"
-    ],
+    origin: (origin, callback) => {
+      // allow requests with no origin (mobile apps, Postman, Expo)
+      if (!origin) return callback(null, true);
+
+      const allowedOrigins = [
+        "http://localhost:5173",
+        "https://civic-solver-frontend.vercel.app"
+      ];
+
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(null, true); // allow mobile/expo requests
+      }
+    },
     credentials: true,
   })
 );
