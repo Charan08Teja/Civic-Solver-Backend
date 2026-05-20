@@ -1,33 +1,10 @@
 const prisma = require('../config/prisma');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
-const emailUser = process.env.EMAIL_USER;
-const emailPass = process.env.EMAIL_PASS;
-const emailService = process.env.EMAIL_SERVICE || 'gmail';
-
-// ✅ Mail transporter (FIXED FOR RENDER)
-const transporter = nodemailer.createTransport({
-  host: "smtp-relay.brevo.com",
-  port: 587,
-  secure: false,
-  auth: {
-    user: emailUser,
-    pass: emailPass
-  },
-  connectionTimeout: 10000
-});
-
-// ✅ Verify transporter on server start
-transporter.verify((error, success) => {
-  if (error) {
-    console.log('MAIL ERROR:', error);
-  } else {
-    console.log('MAIL SERVER READY');
-  }
-});
-
+// ✅ Resend setup
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // ✅ Generate OTP
 function generateOtp() {
@@ -39,23 +16,34 @@ function getOtpExpiry() {
   return new Date(Date.now() + 5 * 60 * 1000);
 }
 
-// ✅ Send OTP email
+// ✅ Send OTP email using Resend API
 async function sendOtpEmail(recipient, otp) {
 
-  if (!emailUser || !emailPass) {
-    throw new Error('Email credentials missing');
-  }
-
-  const mailOptions = {
-    from: emailUser,
+  const response = await resend.emails.send({
+    from: 'onboarding@resend.dev',
     to: recipient,
     subject: 'Civic Solver OTP Verification',
-    text: `Your OTP is ${otp}. It expires in 5 minutes.`
-  };
+    html: `
+      <div style="font-family: Arial, sans-serif; padding: 20px;">
+        <h2>Civic Solver OTP Verification</h2>
+        <p>Your OTP code is:</p>
 
-  const info = await transporter.sendMail(mailOptions);
+        <div style="
+          font-size: 32px;
+          font-weight: bold;
+          letter-spacing: 5px;
+          margin: 20px 0;
+          color: #2563eb;
+        ">
+          ${otp}
+        </div>
 
-  console.log('MAIL SENT:', info.response);
+        <p>This OTP expires in 5 minutes.</p>
+      </div>
+    `
+  });
+
+  console.log("EMAIL SENT:", response);
 }
 
 // ✅ Register
@@ -109,7 +97,7 @@ const register = async (req, res) => {
       }
     });
 
-    // Send email
+    // Send OTP email
     try {
 
       await sendOtpEmail(email, otp);
@@ -244,7 +232,7 @@ const resendOtp = async (req, res) => {
       }
     });
 
-    // Send email
+    // Send OTP email
     try {
 
       await sendOtpEmail(email, otp);
