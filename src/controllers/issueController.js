@@ -1,6 +1,6 @@
 const prisma = require('../config/prisma');
 const generateHash = require('../utils/imageHash');
-const { classifyIssue } = require('../utils/aiClassifier');
+const classifyIssue = require('../utils/aiClassifier');
 const { getIO, onlineUsers } = require('../../socket');
 
 // CREATE ISSUE
