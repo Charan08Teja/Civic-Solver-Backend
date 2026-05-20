@@ -91,7 +91,7 @@ const createIssue = async (req, res) => {
     error: error.message,
     stack: error.stack
   });
-}
+};
 
 // GET ALL ISSUES (PUBLIC VIEW - with limited details)
 const getAllIssues = async (req, res) => {
