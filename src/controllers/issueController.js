@@ -208,16 +208,29 @@ const getAllIssuesAdmin = async (req, res) => {
           select: { upvotes: true }
         }
       },
-      orderBy: {
-        createdAt: sort === "asc" ? "asc" : "desc"
-      }
+
+      // 🔥 Highest upvoted issues first
+      orderBy: [
+        {
+          upvotes: {
+            _count: 'desc'
+          }
+        },
+        {
+          createdAt: sort === "asc" ? "asc" : "desc"
+        }
+      ]
     });
 
     // 🌍 Haversine formula
     const getDistance = (lat1, lon1, lat2, lon2) => {
       const R = 6371;
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLon = (lon2 - lon1) * Math.PI / 180;
+
+      const dLat =
+        (lat2 - lat1) * Math.PI / 180;
+
+      const dLon =
+        (lon2 - lon1) * Math.PI / 180;
 
       const a =
         Math.sin(dLat / 2) ** 2 +
@@ -225,7 +238,12 @@ const getAllIssuesAdmin = async (req, res) => {
         Math.cos(lat2 * Math.PI / 180) *
         Math.sin(dLon / 2) ** 2;
 
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const c =
+        2 * Math.atan2(
+          Math.sqrt(a),
+          Math.sqrt(1 - a)
+        );
+
       return R * c;
     };
 
@@ -237,6 +255,7 @@ const getAllIssuesAdmin = async (req, res) => {
 
       issues = issues
         .map(issue => {
+
           const distance = getDistance(
             latNum,
             lngNum,
@@ -249,8 +268,24 @@ const getAllIssuesAdmin = async (req, res) => {
             distance: parseFloat(distance.toFixed(2))
           };
         })
-        .filter(issue => issue.distance <= radiusKm)
-        .sort((a, b) => a.distance - b.distance);
+
+        .filter(issue =>
+          issue.distance <= radiusKm
+        )
+
+        .sort((a, b) => {
+
+          // 🔥 Keep nearest issue first
+          if (a.distance !== b.distance) {
+            return a.distance - b.distance;
+          }
+
+          // 🔥 If same distance → highest upvotes first
+          return (
+            b._count.upvotes -
+            a._count.upvotes
+          );
+        });
     }
 
     // 📊 Pagination AFTER filtering
@@ -269,9 +304,14 @@ const getAllIssuesAdmin = async (req, res) => {
     });
 
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({
+      error: error.message
+    });
   }
 };
+
+
+
 // UPDATE ISSUE STATUS
 const updateIssueStatus = async (req, res) => {
   try {
